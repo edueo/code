@@ -1,0 +1,33 @@
+---
+- hosts: localhost
+  gather_facts: false
+
+  vars: 
+    image_name: hello-go
+    image_tag: 1.45rs2
+
+
+  tasks:
+    - name: build hello go image
+      docker_image:
+       build:
+         path: ./hello-go
+         pull: false
+       name: '{{ image_name }}'
+       tag: '{{ image_tag }}'
+       source: build
+
+    - name: run the hello go image
+      docker_container:
+        name: hello-godzilla
+        image: '{{ image_name }}:{{ image_tag }}'
+        state: started
+        published_ports:
+          - 8180:8180
+        
+    - name: verify hello go is responding
+      uri:
+        url: http://localhost:8180/test
+        return_content: true
+      register: hello_go_response
+      failed_when: "'/test' not in hello_go_response.content"
